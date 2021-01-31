@@ -42,13 +42,17 @@ class Input {
 
 function printChar(c) {
   if (c < "\u0020") { // control charactor
-    return ("\\u000" + c.charCodeAt(0).toString(16)).slice(-6);
+    return `\\u${("000" + c.charCodeAt(0).toString(16)).slice(-4)}`;
   }
   return c;
 }
 
 function error(message, input, offset, ErrorClass = SyntaxError) {
-  return new ErrorClass(`exp-0.666 error:${input.pos + offset}: ${message}`);
+  // TODO: 改行を考慮したエラーの位置
+  const pos = input.pos + offset;
+  return new ErrorClass(`exp-0.666:${pos}: ${message}
+${input.text}
+${' '.repeat(pos)}^`);
 }
 
 function parseString(input) {
@@ -93,9 +97,7 @@ function parseString(input) {
               !("a" <= c && c <= "f")
             ) {
               throw error(
-                `'${
-                  printChar(c)
-                }' is the character that cannot be used in Unicode Escape Sequence.`,
+                `The charactor '${printChar(c)}' cannot be used in Unicode Escape Sequence.`,
                 input,
                 -1,
               );
@@ -126,7 +128,7 @@ function parseNumber(input, c) {
     c = input.getChar();
     if (!("0" <= c && c <= "9")) {
       throw error(
-        `'${printChar(c)}' is a character that is not expected.`,
+        `The charactor '${printChar(c)}' cannot be used in a number.`,
         input,
         0,
       );
@@ -134,7 +136,7 @@ function parseNumber(input, c) {
     str += c;
   }
   if (c === "0" && input.peekChar() !== ".") {
-    throw error(`The number cannot start from 0.`, input, c === "-" ? 0 : -1);
+    throw error(`The number cannot start from 0.`, input, -1);
   }
 
   while (!input.eof()) {
@@ -175,9 +177,9 @@ function parseNumber(input, c) {
       c = input.getChar();
       if (!("0" <= c && c <= "9")) {
         throw error(
-          `'${printChar(c)}' is a character that is not expected.`,
+          `The charactor '${printChar(c)}' cannot be used in a number.`,
           input,
-          0,
+          -1,
         );
       }
       str += c;

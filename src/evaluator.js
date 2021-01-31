@@ -7,7 +7,7 @@ import {
 } from "./types.js";
 
 function error(message, ErrorClass) {
-  return new ErrorClass(`exp-0.666 error: ${message}`);
+  return new ErrorClass(`exp-0.666: ${message}`);
 }
 
 export function evaluate(node, scope) {
