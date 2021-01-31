@@ -1,0 +1,151 @@
+import {
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std@0.85.0/testing/asserts.ts";
+import { parse } from "../src/parser.js";
+import { Token } from "../src/types.js";
+
+Deno.test("boolean", () => {
+  {
+    const node = parse("true");
+    assertEquals(node.token, Token.BOOLEAN);
+    assertEquals(node.value, true);
+  }
+
+  {
+    const node = parse("false");
+    assertEquals(node.token, Token.BOOLEAN);
+    assertEquals(node.value, false);
+  }
+});
+
+Deno.test("null", () => {
+  const node = parse("null");
+  assertEquals(node.token, Token.NULL);
+  assertEquals(node.value, null);
+});
+
+Deno.test("string", () => {
+  {
+    const node = parse(`"abc"`);
+    assertEquals(node.token, Token.STRING);
+    assertEquals(node.value, "abc");
+  }
+
+  {
+    const node = parse(`"\\u0069\\u006a\\u006B"`);
+    assertEquals(node.token, Token.STRING);
+    assertEquals(node.value, "ijk");
+  }
+
+  {
+    const node = parse(`"\\n"`);
+    assertEquals(node.token, Token.STRING);
+    assertEquals(node.value, "\n");
+  }
+
+  assertThrows(() => {
+    parse('"abc');
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse('"\\u00"');
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse('"\\u00r0"');
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse('"\n"');
+  }, SyntaxError);
+});
+
+Deno.test("number", () => {
+  {
+    const node = parse(`123`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, 123);
+  }
+
+  {
+    const node = parse(`-123`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, -123);
+  }
+
+  assertThrows(() => {
+    parse("0123");
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse("9".repeat(99999));
+  }, RangeError);
+});
+
+Deno.test("empty", () => {
+  {
+    const node = parse(``);
+    assertEquals(node.token, Token.EMPTY);
+  }
+
+  {
+    const node = parse(`   `);
+    assertEquals(node.token, Token.EMPTY);
+  }
+});
+
+Deno.test("invalid source", () => {
+  assertThrows(() => {
+    parse("&");
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse('123 === "abc"');
+  }, SyntaxError);
+});
+
+Deno.test("equal", () => {
+  {
+    const node = parse(`123 == "abc"`);
+    assertEquals(node.token, Token.EQ);
+    assertEquals(node.expr1.token, Token.NUMBER);
+    assertEquals(node.expr2.token, Token.STRING);
+  }
+
+  {
+    const node = parse(`123 != "abc"`);
+    assertEquals(node.token, Token.NE);
+    assertEquals(node.expr1.token, Token.NUMBER);
+    assertEquals(node.expr2.token, Token.STRING);
+  }
+
+  {
+    const node = parse(`123 == "abc" == true`);
+    assertEquals(node.token, Token.EQ);
+    assertEquals(node.expr1.token, Token.EQ);
+    assertEquals(node.expr1.expr1.token, Token.NUMBER);
+    assertEquals(node.expr1.expr2.token, Token.STRING);
+    assertEquals(node.expr2.token, Token.BOOLEAN);
+  }
+});
+
+Deno.test("priority", () => {
+  {
+    const node = parse(`123 == "abc" && 234 == "bcd" || 345 == "cde"`);
+    assertEquals(node.token, Token.OR);
+    assertEquals(node.expr1.token, Token.AND);
+    assertEquals(node.expr1.expr1.token, Token.EQ);
+    assertEquals(node.expr1.expr2.token, Token.EQ);
+    assertEquals(node.expr2.token, Token.EQ);
+  }
+
+  {
+    const node = parse(`123 == "abc" || 234 == "bcd" && 345 == "cde"`);
+    assertEquals(node.token, Token.OR);
+    assertEquals(node.expr1.token, Token.EQ);
+    assertEquals(node.expr2.token, Token.AND);
+    assertEquals(node.expr2.expr1.token, Token.EQ);
+    assertEquals(node.expr2.expr2.token, Token.EQ);
+  }
+});
