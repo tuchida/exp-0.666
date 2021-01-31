@@ -308,18 +308,12 @@ function parseUnary(input) {
   ) {
     return parseIdentifier(input, c);
   }
-
-  input.ungetChar(c);
-  return null;
+  throw error("missing expression.", input, -1);
 }
 
 function parseBinaryExpr(input, nextParse, expect) {
   let expr = nextParse(input);
   skip(input);
-
-  if (expr === null || input.eof()) {
-    return expr;
-  }
 
   while (!input.eof()) {
     const token = expect(input);
@@ -329,9 +323,6 @@ function parseBinaryExpr(input, nextParse, expect) {
 
     skip(input);
     const expr2 = nextParse(input);
-    if (expr2 === null) {
-      throw error("missing expression.", input, 0);
-    }
     skip(input);
 
     expr = new BinaryOperatorNode(token, expr, expr2);
@@ -377,7 +368,11 @@ export function parse(text) {
   const input = new Input(text);
 
   skip(input);
-  let result = parseExpr(input);
+  // empty script
+  if (input.eof()) {
+    return new EmptyNode(Token.EMPTY, null);
+  }
+  const result = parseExpr(input);
   skip(input);
 
   if (!input.eof()) {
@@ -386,11 +381,6 @@ export function parse(text) {
       input,
       0,
     );
-  }
-
-  // empty script
-  if (result === null) {
-    result = new EmptyNode(Token.EMPTY, null);
   }
 
   return result;
