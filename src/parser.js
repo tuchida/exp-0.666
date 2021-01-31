@@ -50,17 +50,21 @@ function printChar(c) {
 function error(message, input, offset, ErrorClass = SyntaxError) {
   // TODO: 改行を考慮したエラーの位置
   const pos = input.pos + offset;
-  return new ErrorClass(`exp-0.666:${pos}: ${message}
+  return Object.assign(
+    new ErrorClass(`exp-0.666:${pos}: ${message}
 ${input.text}
-${' '.repeat(pos)}^`);
+${" ".repeat(pos)}^`),
+    { pos },
+  );
 }
 
 function parseString(input) {
+  const pos = input.pos - 1;
   let result = "";
   while (!input.eof()) {
     const c = input.getChar();
     if (c === '"') {
-      return new LiteralNode(Token.STRING, result);
+      return new LiteralNode(Token.STRING, pos, result);
     } else if (c === "\\") {
       switch (input.getChar()) {
         case '"': // quotation mark U+0022
@@ -97,7 +101,9 @@ function parseString(input) {
               !("a" <= c && c <= "f")
             ) {
               throw error(
-                `The charactor '${printChar(c)}' cannot be used in Unicode Escape Sequence.`,
+                `The charactor '${
+                  printChar(c)
+                }' cannot be used in Unicode Escape Sequence.`,
                 input,
                 -1,
               );
@@ -121,6 +127,7 @@ function parseString(input) {
 }
 
 function parseNumber(input, c) {
+  const { pos } = input;
   let str = c;
   let decimal = false;
 
@@ -204,10 +211,11 @@ function parseNumber(input, c) {
       RangeError,
     );
   }
-  return new LiteralNode(Token.NUMBER, result);
+  return new LiteralNode(Token.NUMBER, pos, result);
 }
 
 function parseIdentifier(input, c) {
+  const pos = input.pos - 1;
   let name = c;
 
   while (!input.eof()) {
@@ -227,15 +235,15 @@ function parseIdentifier(input, c) {
 
   switch (name) {
     case "true":
-      return new LiteralNode(Token.BOOLEAN, true);
+      return new LiteralNode(Token.BOOLEAN, pos, true);
     case "false":
-      return new LiteralNode(Token.BOOLEAN, false);
+      return new LiteralNode(Token.BOOLEAN, pos, false);
 
     case "null":
-      return new LiteralNode(Token.NULL, null);
+      return new LiteralNode(Token.NULL, pos, null);
 
     default:
-      return new IdentifierNode(Token.NAME, name);
+      return new IdentifierNode(Token.NAME, pos, name);
   }
 }
 
@@ -318,6 +326,7 @@ function parseBinaryExpr(input, nextParse, expect) {
   skip(input);
 
   while (!input.eof()) {
+    const { pos } = input;
     const token = expect(input);
     if (token === null) {
       return expr;
@@ -327,7 +336,7 @@ function parseBinaryExpr(input, nextParse, expect) {
     const expr2 = nextParse(input);
     skip(input);
 
-    expr = new BinaryOperatorNode(token, expr, expr2);
+    expr = new BinaryOperatorNode(token, pos, expr, expr2);
   }
 
   return expr;
@@ -372,7 +381,7 @@ export function parse(text) {
   skip(input);
   // empty script
   if (input.eof()) {
-    return new EmptyNode(Token.EMPTY, null);
+    return new EmptyNode(Token.EMPTY, 0);
   }
   const result = parseExpr(input);
   skip(input);
