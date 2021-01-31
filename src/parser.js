@@ -27,6 +27,17 @@ class Input {
   eof() {
     return this.pos >= this.text.length;
   }
+
+  expect(s) {
+    const len = s.length;
+    for (let i = 0; i < len; i++) {
+      if (s[i] !== this.text[this.pos + i]) {
+        return false;
+      }
+    }
+    this.pos += len;
+    return true;
+  }
 }
 
 function printChar(c) {
@@ -311,28 +322,10 @@ function parseBinaryExpr(input, nextParse, expect) {
 
 function parseEqual(input) {
   return parseBinaryExpr(input, parseUnary, (input) => {
-    switch (input.peekChar()) {
-      case "=":
-        {
-          const c = input.getChar();
-          if (input.peekChar() === "=") {
-            input.getChar();
-            return Token.EQ;
-          }
-          input.ungetChar(c);
-        }
-        break;
-
-      case "!":
-        {
-          const c = input.getChar();
-          if (input.peekChar() === "=") {
-            input.getChar();
-            return Token.NE;
-          }
-          input.ungetChar(c);
-        }
-        break;
+    if (input.expect("==")) {
+      return Token.EQ;
+    } else if (input.expect("!=")) {
+      return Token.NE;
     }
     return null;
   });
@@ -340,13 +333,8 @@ function parseEqual(input) {
 
 function parseAnd(input) {
   return parseBinaryExpr(input, parseEqual, (input) => {
-    if (input.peekChar() === "&") {
-      const c = input.getChar();
-      if (input.peekChar() === "&") {
-        input.getChar();
-        return Token.AND;
-      }
-      input.ungetChar(c);
+    if (input.expect("&&")) {
+      return Token.AND;
     }
     return null;
   });
@@ -354,13 +342,8 @@ function parseAnd(input) {
 
 function parseOr(input) {
   return parseBinaryExpr(input, parseAnd, (input) => {
-    if (input.peekChar() === "|") {
-      const c = input.getChar();
-      if (input.peekChar() === "|") {
-        input.getChar();
-        return Token.OR;
-      }
-      input.ungetChar(c);
+    if (input.expect("||")) {
+      return Token.OR;
     }
     return null;
   });
