@@ -122,7 +122,18 @@ function parseNumber(input, c) {
   let str = c;
   let decimal = false;
 
-  if (c === "0" || (c === "-" && input.peekChar() === "0")) {
+  if (c === "-") {
+    c = input.getChar();
+    if (!("0" <= c && c <= "9")) {
+      throw error(
+        `'${printChar(c)}' is a character that is not expected.`,
+        input,
+        0,
+      );
+    }
+    str += c;
+  }
+  if (c === "0" && input.peekChar() !== ".") {
     throw error(`The number cannot start from 0.`, input, c === "-" ? 0 : -1);
   }
 
@@ -161,6 +172,15 @@ function parseNumber(input, c) {
       if (c === "+" || c === "-") {
         str += input.getChar();
       }
+      c = input.getChar();
+      if (!("0" <= c && c <= "9")) {
+        throw error(
+          `'${printChar(c)}' is a character that is not expected.`,
+          input,
+          0,
+        );
+      }
+      str += c;
       while (!input.eof()) {
         const c = input.getChar();
         if ("0" <= c && c <= "9") {

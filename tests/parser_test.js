@@ -74,6 +74,36 @@ Deno.test("number", () => {
     assertEquals(node.value, -123);
   }
 
+  {
+    const node = parse(`0.1`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, 0.1);
+  }
+
+  {
+    const node = parse(`-0.12`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, -0.12);
+  }
+
+  {
+    const node = parse(`1.e4`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, 1.e4);
+  }
+
+  {
+    const node = parse(`10.E-10`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, 10.E-10);
+  }
+
+  {
+    const node = parse(`1.1e4`);
+    assertEquals(node.token, Token.NUMBER);
+    assertEquals(node.value, 1.1e4);
+  }
+
   assertThrows(() => {
     parse("0123");
   }, SyntaxError);
@@ -81,6 +111,22 @@ Deno.test("number", () => {
   assertThrows(() => {
     parse("9".repeat(99999));
   }, RangeError);
+
+  assertThrows(() => {
+    parse(".12");
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse("-.12");
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse("1e4");
+  }, SyntaxError);
+
+  assertThrows(() => {
+    parse("1.ee4");
+  }, SyntaxError);
 });
 
 Deno.test("empty", () => {
