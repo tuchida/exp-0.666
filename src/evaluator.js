@@ -3,6 +3,7 @@ import {
   EmptyNode,
   IdentifierNode,
   LiteralNode,
+  ParenthesizedNode,
   Token,
 } from "./types.js";
 
@@ -37,6 +38,8 @@ export function evaluate(node, scope, source = null) {
           evaluate(node.expr2, scope, source);
     }
     throw error(`unknown AST '${node.token}'.`, node, source, TypeError);
+  } else if (node instanceof ParenthesizedNode) {
+    return evaluate(node, scope, source);
   } else if (node instanceof LiteralNode) {
     return node.value;
   } else if (node instanceof IdentifierNode) {

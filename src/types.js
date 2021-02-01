@@ -9,6 +9,7 @@ const Token = Object.freeze({
   NE: "ne",
   AND: "and",
   OR: "or",
+  PAREN: "paren",
 });
 
 class ExpressionNode {
@@ -58,6 +59,18 @@ ${this.expr2.toString(indent + 1)}`;
   }
 }
 
+class ParenthesizedNode extends ExpressionNode {
+  constructor(token, pos, expr) {
+    super(token, pos);
+    this.expr = expr;
+  }
+
+  toString(indent = 0) {
+    return `${" ".repeat(indent * 2)}${this.token}:${this.pos}:
+${this.expr.toString(indent + 1)}`;
+  }
+}
+
 class EmptyNode extends ExpressionNode {
   constructor(token, pos) {
     super(token, pos);
@@ -74,5 +87,6 @@ export {
   ExpressionNode,
   IdentifierNode,
   LiteralNode,
+  ParenthesizedNode,
   Token,
 };

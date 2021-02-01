@@ -3,6 +3,7 @@ import {
   EmptyNode,
   IdentifierNode,
   LiteralNode,
+  ParenthesizedNode,
   Token,
 } from "./types.js";
 
@@ -321,6 +322,25 @@ function parseUnary(input) {
   throw error("missing expression.", input, -1);
 }
 
+function parseParenExpr(input) {
+  if (input.peekChar() !== "(") {
+    return parseUnary(input);
+  }
+  const { pos } = input;
+  input.getChar();
+
+  skip(input);
+  const expr = parseExpr(input);
+  skip(input);
+
+  if (input.peekChar() !== ")") {
+    throw error("The paren could not be closed.", input, 0);
+  }
+  input.getChar();
+
+  return new ParenthesizedNode(Token.PAREN, pos, expr);
+}
+
 function parseBinaryExpr(input, nextParse, expect) {
   let expr = nextParse(input);
   skip(input);
@@ -343,7 +363,7 @@ function parseBinaryExpr(input, nextParse, expect) {
 }
 
 function parseEqual(input) {
-  return parseBinaryExpr(input, parseUnary, (input) => {
+  return parseBinaryExpr(input, parseParenExpr, (input) => {
     if (input.expect("==")) {
       return Token.EQ;
     } else if (input.expect("!=")) {
