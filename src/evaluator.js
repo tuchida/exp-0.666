@@ -44,7 +44,7 @@ export function evaluate(node, scope, source = null) {
     return node.value;
   } else if (node instanceof IdentifierNode) {
     const name = node.name;
-    if (!(name in scope)) {
+    if (!Object.prototype.hasOwnProperty.call(scope, name)) {
       throw error(`'${name}' is not found.`, node, source, ReferenceError);
     }
     return scope[name];
