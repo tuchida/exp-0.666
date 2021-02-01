@@ -1,9 +1,20 @@
 import {
   assertEquals,
-  assertThrows,
+  fail,
 } from "https://deno.land/std@0.85.0/testing/asserts.ts";
 import { parse } from "../src/parser.js";
 import { Token } from "../src/types.js";
+
+function assertThrowsWithPos(fn, ErrorClass, pos) {
+  try {
+    fn();
+  } catch (e) {
+    if (!(e instanceof ErrorClass)) {
+      fail();
+    }
+    assertEquals(pos, e.pos);
+  }
+}
 
 Deno.test("parse boolean", () => {
   {
@@ -44,21 +55,21 @@ Deno.test("parse string", () => {
     assertEquals(node.value, "\n");
   }
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse('"abc');
-  }, SyntaxError);
+  }, SyntaxError, 4);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse('"\\u00"');
-  }, SyntaxError);
+  }, SyntaxError, 5);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse('"\\u00r0"');
-  }, SyntaxError);
+  }, SyntaxError, 5);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse('"\n"');
-  }, SyntaxError);
+  }, SyntaxError, 1);
 });
 
 Deno.test("parse number", () => {
@@ -104,29 +115,29 @@ Deno.test("parse number", () => {
     assertEquals(node.value, 1.1e4);
   }
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("0123");
-  }, SyntaxError);
+  }, SyntaxError, 0);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("9".repeat(99999));
-  }, RangeError);
+  }, RangeError, 0);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse(".12");
-  }, SyntaxError);
+  }, SyntaxError, 0);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("-.12");
-  }, SyntaxError);
+  }, SyntaxError, 1);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("1e4");
-  }, SyntaxError);
+  }, SyntaxError, 1);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("1.ee4");
-  }, SyntaxError);
+  }, SyntaxError, 3);
 });
 
 Deno.test("parse empty", () => {
@@ -142,13 +153,13 @@ Deno.test("parse empty", () => {
 });
 
 Deno.test("parse invalid source", () => {
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("&");
-  }, SyntaxError);
+  }, SyntaxError, 0);
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse('123 === "abc"');
-  }, SyntaxError);
+  }, SyntaxError, 6);
 });
 
 Deno.test("parse equal", () => {
@@ -223,11 +234,11 @@ Deno.test("parse paren", () => {
     assertEquals(node.expr2.expr.expr2.token, Token.BOOLEAN);
   }
 
-  assertThrows(() => {
+  assertThrowsWithPos(() => {
     parse("()");
-  }, SyntaxError);
+  }, SyntaxError, 1);
 
-  assertThrows(() => {
-    parse("()");
-  }, SyntaxError);
+  assertThrowsWithPos(() => {
+    parse("(123");
+  }, SyntaxError, 4);
 });

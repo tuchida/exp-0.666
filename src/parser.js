@@ -138,7 +138,7 @@ function parseNumber(input, c) {
       throw error(
         `The charactor '${printChar(c)}' cannot be used in a number.`,
         input,
-        0,
+        -1,
       );
     }
     str += c;
@@ -208,7 +208,7 @@ function parseNumber(input, c) {
     throw error(
       "This is outside the range of what can be expressed in IEEE 754-2019.",
       input,
-      -1,
+      pos - input.pos - 1,
       RangeError,
     );
   }
